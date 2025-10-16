@@ -1,0 +1,67 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "bot.py"]
+    # env_file:
+    #   - .env
+    # environment:
+    #   # Ensure in-container paths line up with code defaults
+    #   CELERY_BROKER_URL: redis://redis:6379/0
+    #   CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - app_data:/app/.data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "512M"
+
+  worker:
+    build:
+      context: .
+    # same image as app, different command
+    command: ["celery", "-A", "worker.celery_app", "worker", "--beat", "-s", "/app/.data/celery", "--loglevel=info"]
+    # env_file:
+    #   - .env
+    # environment:
+    #   CELERY_BROKER_URL: redis://redis:6379/0
+    #   CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - app_data:/app/.data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "512M"
+
+  redis:
+    image: redis:7-alpine
+    # Enable persistence (AOF) + a periodic RDB snapshot for extra safety
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+volumes:
+  app_data:
+  redis_data:
