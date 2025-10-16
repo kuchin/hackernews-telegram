@@ -76,7 +76,7 @@ Pending/published sets live in Redis; it is safe to flush DB 1 or DB 2 in local 
 
 ## Operational Notes
 - `make deploy` rsyncs the repository (including `.env.prod`) to the remote host and runs `docker compose up` with rebuilds.
-- If the bot misses auto-forwards, inspect `o3news:pending:*`—lack of entries indicates posting failures, lingering entries signal missing forwards.
+- If the bot misses auto-forwards, inspect `tgnews:pending:*`—lack of entries indicates posting failures, lingering entries signal missing forwards.
 - For ad-hoc staging inspection, use `publish.staging_store.list_staged_articles()` or `get_staged_article(article_id)` in a Python shell.
 - Telegram can flip a discussion between forum and non-forum; the send helpers already retry in both modes, but keep an eye on logs for repeated routing warnings.
 
@@ -84,5 +84,5 @@ Pending/published sets live in Redis; it is safe to flush DB 1 or DB 2 in local 
 ```bash
 uv run python -m publish.staging_store   # drop into a REPL (add your own helper code)
 uv run celery -A worker.celery_app shell # Celery control shell for debugging workers
-redis-cli -u "$PENDING_REDIS_URL" keys 'o3news:*' # inspect redis state
+redis-cli -u "$PENDING_REDIS_URL" keys 'tgnews:*' # inspect redis state
 ```
